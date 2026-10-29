@@ -1,117 +1,92 @@
-# Nota Implementation Plan
+# Nota — Implementation Plan (Manajemen Keuangan Masjid)
 
-Work in the order below. Each milestone ends with a review gate. Do not skip ahead merely because a page can be generated quickly.
+Kerjakan secara berurutan sesuai tahapan milestone di bawah ini. Setiap milestone diakhiri dengan pemeriksaan pengujian otomatis (`typecheck`, `lint`, `test`, `build`) dan pembaruan `HANDOFF.md`.
 
-## Milestone 0 — Repository foundation and design tokens
+---
 
-### Scope
-- Create React + TypeScript + Vite SPA.
-- Add Tailwind CSS v4 through its official Vite integration.
-- Establish theme tokens from `DESIGN_BRIEF.md`, typography, basic layout primitives, Lucide icons, and responsive app shell.
-- Set up lint/typecheck/test scripts with compatible stable tooling.
-- Establish folder structure without unnecessary abstractions.
-- Add a minimal app shell with Nota identity and real navigation only for implemented routes.
+## Milestone M1 — Model Domain Keuangan Masjid, Migrasi Skema v5, & Lapisan Repositori
 
-### Do not do
-- No auth, Supabase, remote database, wallets, bank features, AI API, or financial feature implementation yet.
-- Do not scaffold every optional page with fake content.
+### Ruang Lingkup
+- Mendefinisikan tipe dan fungsi domain murni untuk **Keuangan Masjid** di `src/domain/`:
+  - `MosqueSettings` (identitas masjid, alamat, nama Ketua DKM, nama Bendahara).
+  - `CashAccount` (2 lokasi kas bawaan: *Kas Tunai* & *Rekening Bank Tercatat*).
+  - `Fund` (3 dana bawaan: *Dana Operasional Umum* [`unrestricted`], *Dana Pembangunan* [`restricted`], dan *Dana Sosial / Zakat* [`restricted`]).
+  - `Category` dengan kategori penerimaan & pengeluaran bawaan khas masjid beserta `defaultFundId`.
+  - `Transaction` dengan atribusi `accountId`, `fundId`, `categoryId`, `budgetPlanId?`, `donorOrPayee?`, `referenceNo?`, `note?`.
+  - `CashTransfer` (mutasi antar-kas yang memindahkan saldo antar `CashAccount` tanpa mengubah saldo `Fund` atau menggandakan arus kas).
+  - `evaluateTransactionSoftGuard` (peringatan tegas saat pengeluaran melebihi saldo dana/kas atau lintas peruntukan dana terikat).
+  - `BudgetPlan` & `BudgetLineItem` (Anggaran Operasional Bulanan & RAB Kegiatan).
+  - `generateMosqueFinancialReport` (perhitungan laporan kas Jumat/7 Hari, Bulanan, dan Rentang Tanggal Kustom).
+- Memperbarui Dexie (`src/data/db.ts`) ke `NOTA_SCHEMA_VERSION = 5` dengan migrasi aman dari `v1–v4`.
+- Memperbarui `src/data/repositories/notaRepository.ts` dan `src/data/backup/notaBackup.ts` (`v1–v5` kompatibel).
 
-### Acceptance gate
-- Fresh install, dev server, production build, and lint/typecheck commands work.
-- Responsive shell is checked at desktop and mobile sizes.
-- Visual tokens are centralized and documented.
-- No unused placeholder controls.
+### Acceptance Gate
+- Unit test & repository test mencakup perhitungan saldo per Kas, saldo per Dana, mutasi antar-kas, *Soft Guard* dana terikat, realisasi RAB, perhitungan laporan periodik, dan kompatibilitas backup `v1–v5`.
 
-## Milestone 1 — Local data model and domain rules
+---
 
-### Scope
-- Add Dexie/IndexedDB schema and schema versioning.
-- Implement Transaction, Category, and Settings domain types and repositories.
-- Implement money formatting, date/period helpers, summary calculations, and input validation.
-- Seed only category definitions, not fake transactions.
+## Milestone M2 — Navigasi 6-Tab (`AppShell`), Onboarding Masjid, & Halaman `Kas & Dana`
 
-### Acceptance gate
-- Unit tests cover balance, income/expense summaries, category filtering, period boundaries, edit/delete consequences, and invalid amounts.
-- App handles empty database without errors.
-- No query logic is duplicated in UI.
+### Ruang Lingkup
+- Memperbarui [`AppShell.tsx`](file:///d:/Nota/src/components/layout/AppShell.tsx) untuk mendukung 6 tab utama:
+  1. `Ringkasan`
+  2. `Transaksi`
+  3. `Kas & Dana`
+  4. `Anggaran / RAB`
+  5. `Laporan`
+  6. `Pengaturan`
+- Memperbarui panel *onboarding* awal untuk mengisi Nama Masjid, saldo awal *Kas Tunai* & *Rekening Bank Tercatat*, serta alokasi saldo awal ke 3 Dana Masjid.
+- Membangun halaman **`Kas & Dana`**:
+  - Kartu posisi tiap Lokasi Kas (`CashAccount`) + tambah/edit lokasi kas.
+  - Kartu posisi tiap Dana Masjid (`Fund`) dengan badge *Dana Umum* vs *Dana Terikat (Amanah)* + tambah/edit dana.
+  - Formulir & riwayat **Mutasi Antar-Kas (`CashTransfer`)** (mis. setor tunai kotak Jumat ke rekening bank tercatat) lengkap dengan fitur hapus mutasi.
 
-## Milestone 2 — Onboarding and local persistence
+### Acceptance Gate
+- Penambahan mutasi antar-kas mengubah saldo `Kas Tunai` dan `Rekening Bank Tercatat` secara akurat tanpa mengubah total kas masjid maupun saldo `Fund`.
 
-### Scope
-- Lightweight first-run setup: explain virtual/local data and set opening balance.
-- Save settings in IndexedDB.
-- Add clear path to change opening balance later.
+---
 
-### Acceptance gate
-- Reload preserves setup values.
-- No login or network required.
-- Opening balance is not counted as period income.
+## Milestone M3 — Halaman `Ringkasan` Masjid & Jurnal `Transaksi` dengan Soft Guard
 
-## Milestone 3 — Dashboard design and real summary
+### Ruang Lingkup
+- Memperbarui halaman **`Ringkasan`**:
+  - Hero 2-Kolom: Total Kas Masjid Saat Ini (terpilah menjadi *Dana Operasional Umum* vs *Dana Terikat*) + Arus Kas Periode Terpilih.
+  - Ringkasan cepat posisi Lokasi Kas & Dana Masjid + visual arus kas kategori masjid.
+  - 5 Transaksi Terakhir dengan badge Dana & Kas.
+- Memperbarui halaman **`Transaksi`** dan modal **`TransactionFormModal`**:
+  - Pilihan Lokasi Kas (`accountId`), Dana (`fundId` — otomatis terisi dari `defaultFundId` kategori namun dapat diubah), Kategori Masjid, Tanggal, Nominal IDR, Donatur/Penerima (`donorOrPayee`), Nomor Bukti (`referenceNo`), dan Catatan.
+  - **Banner Konfirmasi Soft Guard**: tampil saat pengeluaran melebihi saldo Dana/Kas atau membebani Dana Terikat dengan kategori di luar peruntukannya, meminta konfirmasi eksplisit bendahara sebelum disimpan.
+  - Filter multi-dimensi pada daftar transaksi: Periode, Jenis, Lokasi Kas, Dana, Kategori, dan Pencarian Kata Kunci.
 
-### Scope
-- Build dashboard according to `DESIGN_BRIEF.md` and `PRD.md`.
-- Display actual balance, selected-period income/expenses/net, a compact recent transaction list, and one meaningful visual when data exists.
-- Empty state provides a useful next action.
-- Add visible actions to record income and expenses.
+### Acceptance Gate
+- Alur tambah/edit/hapus transaksi masjid, pemfilteran per Dana & per Kas, serta konfirmasi *Soft Guard* berjalan akurat dan teruji.
 
-### Acceptance gate
-- Screenshot reviewed at mobile and desktop widths.
-- Summary values come from tested domain functions and persisted data.
-- No sample transaction/reward/account UI.
+---
 
-## Milestone 4 — Transaction CRUD and fast form
+## Milestone M4 — Halaman `Anggaran / RAB` Masjid
 
-### Scope
-- Add/list/edit/delete transaction.
-- Search, type/category/period filters, sort.
-- Quick-entry form with accessible validation and feedback.
+### Ruang Lingkup
+- Membangun halaman khusus **`Anggaran / RAB`** (menggantikan tampilan perencanaan pribadi di UI):
+  - Mendukung pembuatan **Anggaran Operasional Bulanan** maupun **RAB Kegiatan / Kepanitiaan** (mis. *RAB Ramadan*, *RAB Idul Adha*, *RAB Renovasi*).
+  - Menambahkan rincian baris pos anggaran (`BudgetLineItem` rencana penerimaan/pengeluaran per kategori).
+  - Menampilkan perbandingan **Rencana vs Realisasi Aktual vs Sisa Anggaran** secara visual tanpa menggandakan saldo kas masjid.
 
-### Acceptance gate
-- End-to-end add/edit/delete flows pass.
-- Dashboard updates after every operation.
-- Failed persistence is surfaced clearly.
-- Dates and Rupiah formatting are consistent.
+### Acceptance Gate
+- Pembuatan, pembaruan, penambahan pos, dan penghapusan RAB berjalan lancar serta menghitung realisasi aktual dari transaksi yang sesuai.
 
-## Milestone 5 — Backup, restore, and hardening
+---
 
-### Scope
-- Export JSON backup and optionally transaction CSV.
-- Validate preview and import flow; replace only after explicit confirmation.
-- Handle invalid/corrupted backup safely.
+## Milestone M5 — Halaman `Laporan` Pertanggungjawaban Jamaah & Halaman `Pengaturan`
 
-### Acceptance gate
-- Round-trip export/import test succeeds.
-- Invalid backups do not partially overwrite data.
-- User receives clear data-safety messaging.
+### Ruang Lingkup
+- Membangun halaman **`Laporan`**:
+  - Pemilih preset periode: **Laporan Kas Jumat / 7 Hari Terakhir**, **Laporan Bulanan**, dan **Rentang Tanggal Kustom**, serta filter Dana.
+  - Lembar laporan pertanggungjawaban lengkap: Kop Identitas Masjid, Ringkasan Saldo Awal → Penerimaan → Pengeluaran → Saldo Akhir, Tabel Posisi per Dana, Tabel Rincian per Kategori, Posisi Kas Akhir, dan Blok Tanda Tangan Ketua DKM & Bendahara.
+  - Tombol `Cetak / Simpan PDF` (`window.print()` dengan aturan CSS `@media print` bersih) dan `Ekspor CSV Laporan`.
+- Membangun halaman **`Pengaturan`**:
+  - Panel **Profil & Pengurus Masjid** (Nama Masjid, Alamat, Ketua DKM, Bendahara).
+  - Panel **Manajemen Kategori Masjid** (tambah, ubah nama, arsipkan kategori).
+  - Panel **Data & Cadangan (`BackupRestoreSection`)**: satu-satunya lokasi untuk ekspor/impor cadangan JSON dan CSV.
 
-## Milestone 6 — UX polish and performance pass
-
-### Scope
-- Keyboard/accessibility review, empty/loading/error states, mobile layout adjustments.
-- Measure production bundle and interactions.
-- Lazy-load non-core pages/charts if the measurements warrant it.
-
-### Acceptance gate
-- Test matrix includes narrow mobile, tablet, laptop, desktop.
-- No horizontal overflow or dead controls.
-- Record measured bundle/performance results in handoff.
-
-## Milestone 7 — Optional planning and analytics
-
-Proceed only after approval. Add analytics, budgets, savings goals, recurring bills/contributions, or debt tracking one module at a time, with explicit data rules and tests.
-
-### Acceptance gate
-- Optional module does not crowd the dashboard.
-- Related balances and cash flow are not double-counted.
-
-## Milestone 8 — AI exploration (optional)
-
-Not required for core product. Propose a separate architecture and privacy flow before implementation. Never store provider secret keys in browser code and never send personal finance data externally without explicit informed consent.
-
-## End-of-milestone checklist
-
-- Tests, typecheck, lint, and production build actually executed as applicable.
-- Main user flow verified, not only compilation.
-- Screenshot or responsive check recorded for visual milestones.
-- `HANDOFF.md` updated with actual status, exact results, limitations, and next task.
+### Acceptance Gate
+- Seluruh 6 tab utama berfungsi penuh dengan identitas halaman yang berbeda, laporan kas siap cetak, backup/restore hanya ada di `Pengaturan → Data & Cadangan`, dan seluruh pengujian (`typecheck`, `lint`, `test`, `build`) lulus.

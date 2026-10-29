@@ -1,14 +1,14 @@
-# AGENTS.md — Persistent Instructions for Nota
+# AGENTS.md — Persistent Instructions for Nota (Manajemen Keuangan Masjid)
 
 ## Mission
 
-Build **Nota**, a local-first personal finance web app for one individual. Read `PRD.md`, `DESIGN_BRIEF.md`, `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, and `HANDOFF.md` before making substantial changes. The image at `references/nota-visual-reference.png` is the primary visual reference.
+Build **Nota**, a local-first mosque financial management web application (DKM / Takmir) that helps mosque administrators record, organize, plan (RAB), and transparently report mosque finances to the congregation. Read `PRD.md`, `DESIGN_BRIEF.md`, `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, and `HANDOFF.md` before making substantial changes. The image at `references/nota-visual-reference.png` is the primary visual reference for palette, whitespace, and typographic calm.
 
 ## Source of truth
 
-- Product requirements and business rules: `PRD.md`.
-- Visual identity, layouts, and UX: `DESIGN_BRIEF.md`.
-- Technology and data boundaries: `ARCHITECTURE.md`.
+- Product requirements and mosque accounting/governance rules: `PRD.md`.
+- Visual identity, 6-tab page layouts, print rules, and UX: `DESIGN_BRIEF.md`.
+- Technology, Dexie `v5` schema, and data boundaries: `ARCHITECTURE.md`.
 - Sequence and acceptance gates: `IMPLEMENTATION_PLAN.md`.
 - Factual state of work: `HANDOFF.md`.
 
@@ -17,35 +17,36 @@ Do not silently resolve conflicts between documents. Report the exact conflict a
 ## Product invariants
 
 - The app name is Nota.
-- The product is single-user and local-first.
-- Do not add login, registration, user profiles, bank connections, real accounts, real wallets, cards, payment-provider integrations, or real transfers.
-- Core workflows must work without a server, cloud database, or AI provider.
+- The product is local-first for mosque financial administration.
+- Do not add login, registration, cloud databases, real bank API connections, payment-gateway integrations, or mandatory AI.
+- Core workflows must work completely offline in the browser.
+- Distinguish **Cash Accounts (`CashAccount` — where money is physically/manually recorded: `Kas Tunai`, `Rekening Bank Tercatat`)** from **Funds (`Fund` — designated amanah purposes: `Dana Operasional Umum`, `Dana Pembangunan`, `Dana Sosial / Zakat`)**.
+- Internal **Cash Transfers (`CashTransfer`)** move balances between `CashAccount`s without altering `Fund` balances or double-counting income/expenses.
+- Enforce **Soft Guard (Warning with Treasurer Confirmation)** when an expense exceeds the selected Fund/Account balance or uses a restricted Fund with an mismatched category.
 - Money is stored as integer IDR values, never formatted currency strings.
-- Balance logic and period summaries must live in tested domain functions, not be duplicated in components.
-- Never populate normal user data with fake/demo records.
+- Balance logic, fund summaries, RAB realization, and financial reports must live in tested domain functions, not be duplicated in components.
+- Backup and restore must live exclusively under `Pengaturan → Data & Cadangan`.
+- Never populate normal user data with fake/demo transactions.
 - Never claim that local browser storage is automatically encrypted.
 - Never expose API secrets in frontend code.
 
 ## Visual rules
 
-- Follow `DESIGN_BRIEF.md`; treat the reference as direction, not as a screenshot to clone.
+- Follow `DESIGN_BRIEF.md`; treat the reference as aesthetic direction.
 - Use the warm off-white, emerald, soft green, lime accent, and charcoal tokens specified there.
-- Avoid generic template dashboards, too many identical cards, decorative charts, unnecessary borders/shadows, and unlabelled controls.
+- Give each of the 6 primary tabs (`Ringkasan`, `Transaksi`, `Kas & Dana`, `Anggaran / RAB`, `Laporan`, `Pengaturan`) a distinct layout, purpose, and primary action.
+- Support clean `@media print` rendering on the `Laporan` tab for congregation announcements.
 - Design mobile and desktop intentionally; do not simply shrink the desktop layout.
-- Every visible button/control must perform a real action or be clearly disabled/not yet available.
-- No placeholder data masquerading as actual user finances.
-- Prefer small, composable components and a consistent spacing/type scale over one-off styling.
+- Every visible button/control must perform a real action.
 
 ## Engineering rules
 
-- Use React + TypeScript + Vite SPA unless the owner explicitly approves an architecture change.
+- Use React + TypeScript + Vite SPA.
 - Use IndexedDB through Dexie for persistent financial data; do not use `localStorage` as the transaction database.
 - Components must not query Dexie directly throughout the UI. Keep data operations in repository/domain functions.
 - Keep dependencies lean; add a dependency only when its benefit is clear and it is used.
-- Lazy-load optional analytics/charts where practical.
 - Use semantic HTML, keyboard-accessible controls, visible focus, and labelled form fields.
 - Avoid broad `any`, ignored errors, fake stubs, dead buttons, and silent catch blocks.
-- Do not optimize based on guesswork; measure bundle/performance when relevant.
 
 ## Workflow
 

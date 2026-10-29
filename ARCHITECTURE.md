@@ -1,198 +1,130 @@
-# Architecture Decision Record: Nota
+# Architecture Decision Record: Nota — Manajemen Keuangan Masjid
 
-**Status:** Target architecture proposal  
-**Prinsip:** SPA local-first, tanpa backend untuk fungsi inti.
+**Status:** Disetujui untuk implementasi Nota Masjid  
+**Prinsip:** SPA *local-first* tanpa backend untuk fungsi inti, memisahkan lokasi penyimpanan kas (`CashAccount`) dari peruntukan amanah dana (`Fund`).
 
-## 1. Rekomendasi stack
+---
 
-### Keputusan utama
+## 1. Stack Teknologi
 
-| Lapisan | Pilihan awal | Alasan |
+| Lapisan | Pilihan | Alasan |
 |---|---|---|
-| Web app | React + TypeScript | Ekosistem matang, tipe membantu mengurangi bug domain, cocok untuk komponen UI interaktif. |
-| Build/dev | Vite | Dev server dan HMR cepat, build SPA statis dan keluaran production yang dioptimalkan. |
-| Styling | Tailwind CSS v4 | Styling langsung pada komponen, token visual terpusat, tanpa runtime styling besar. |
-| UI primitives | shadcn/ui secara selektif + Radix primitives bila diperlukan | Komponen dapat disesuaikan dan dimiliki di repo, tidak harus menerima desain default seluruh kit. Jangan memasang semua komponen. |
-| Icons | Lucide React | Gaya ikon konsisten. |
-| Local database | IndexedDB melalui Dexie | Data keuangan terstruktur, async persistence, indeks, dan migrasi skema. |
-| React bindings | `dexie-react-hooks`/`useLiveQuery` bila dibutuhkan | Membuat UI bereaksi pada perubahan DB lokal tanpa custom subscription yang rapuh. |
-| Form validation | Zod; React Hook Form hanya bila form mulai kompleks | Validasi data konsisten. Jangan menambah form abstraction untuk satu input sederhana. |
-| Charting | Mulai dari SVG/CSS sederhana; gunakan Recharts secara selektif dan lazy-loaded jika analitik memerlukannya | Menekan beban awal dan menghindari chart dekoratif. |
-| Unit/integration tests | Vitest + Testing Library | Dekat dengan toolchain Vite dan mendukung pengujian domain/komponen. |
-| End-to-end | Playwright | Menguji alur pengguna di browser pada viewport berbeda. |
-| Package manager | npm | Pilihan sederhana untuk pemula dan agent; jangan mengombinasikan beberapa package manager. |
-| Deployment | Static hosting, opsional | Build inti dapat disajikan sebagai file statis; tidak membutuhkan backend. |
+| Web App | React 19 + TypeScript (`~5.8.3`) | Tipe ketat menjaga integritas perhitungan kas, dana, mutasi, dan RAB. |
+| Build / Dev | Vite (`^6.3.1`) | Build SPA statis cepat, HMR responsif, dan ukuran bundle terkontrol. |
+| Styling | Tailwind CSS v4 (`@tailwindcss/vite`) | Token desain terpusat di `src/styles/tokens.css` + dukungan `@media print` (`print:...`) untuk lembar Laporan Kas Masjid. |
+| Icons | Lucide React | Ikon konsisten dan ringan. |
+| Local Database | IndexedDB melalui Dexie (`^4.0.11`) | Mendukung multi-tabel (`accounts`, `funds`, `transactions`, `cashTransfers`, `budgetPlans`, `categories`, `settings`), indeks kueri, migrasi skema berversi, dan transaksi atomik `'rw'`. |
+| Pengujian | Vitest + Testing Library + `fake-indexeddb` | Pengujian unit domain murni, integrasi repositori IndexedDB, dan pengujian antarmuka pengguna. |
 
-### Mengapa bukan full-stack framework dahulu?
+---
 
-Nota tidak membutuhkan server rendering, route loaders dari backend, session login, atau API backend untuk fitur inti. React + Vite sebagai SPA statis adalah pilihan yang lebih sederhana untuk constraint local-first ini. Jika kebutuhan berubah menjadi sinkronisasi, berbagi data, atau AI berbasis provider eksternal, arsitektur backend dapat dinilai ulang secara eksplisit. Ini keputusan berdasarkan scope Nota, bukan klaim bahwa Vite selalu lebih baik dari framework lain.
+## 2. Arsitektur Penyimpanan Lokal (IndexedDB + Dexie Schema v5)
 
-## 2. Prinsip performa
+Seluruh data finansial masjid disimpan di IndexedDB (`nota_local_db`) dan diakses **hanya** melalui lapisan repositori (`src/data/repositories/notaRepository.ts`). Komponen React dilarang memanggil Dexie secara langsung.
 
-Tidak ada framework yang otomatis menjamin aplikasi bebas lag. Performa harus dijaga melalui batas dependency, desain state, pengukuran, dan pengujian pada perangkat nyata.
+### Tabel Data Store (`NOTA_SCHEMA_VERSION = 5`)
 
-- Gunakan versi stabil yang kompatibel pada saat scaffold. Catat versi Node/npm dan lockfile.
-- Hindari dependency yang duplikatif dan library UI besar yang tidak dibutuhkan.
-- Lazy-load halaman analitik dan visualisasi yang bukan bagian dari initial view.
-- Jangan menjalankan agregasi besar berulang kali saat render. Gunakan query terukur dan memoization hanya jika profiling membuktikannya perlu.
-- Jangan memuat ribuan transaksi sekaligus di daftar. Tambahkan pagination/virtualization hanya saat volume data dan profil performa membutuhkannya.
-- Gunakan CSS/SVG untuk visual sederhana, bukan canvas/chart bundle besar tanpa kebutuhan.
-- Hindari font remote sebagai ketergantungan awal; gunakan system stack atau self-hosted font setelah mengevaluasi ukurannya.
-- Gunakan production build untuk evaluasi, bukan hanya dev server.
-- Ukur dengan browser performance tools dan Lighthouse; jangan mengklaim "anti-lag" tanpa hasil ukur.
+1. **`settings`**:
+   - Primary key: `id` (`'app-settings'`).
+   - Menyimpan `MosqueSettings` (`mosqueName`, `mosqueAddress`, `chairpersonName`, `treasurerName`, `openingBalance`, `currency: 'IDR'`, `onboardingCompleted`, `updatedAt`).
+2. **`accounts`** (`CashAccount` — Lokasi Penyimpanan Kas):
+   - Indeks: `'id, kind, isDefault'`.
+   - Default seeded:
+     - `'acc-kas-tunai'` (`Kas Tunai`, `kind: 'cash'`)
+     - `'acc-bank-masjid'` (`Rekening Bank Tercatat`, `kind: 'bank_recorded'`)
+3. **`funds`** (`Fund` — Peruntukan Amanah Dana):
+   - Indeks: `'id, restriction, isDefault'`.
+   - Default seeded:
+     - `'fund-operasional'` (`Dana Operasional Umum`, `restriction: 'unrestricted'`)
+     - `'fund-pembangunan'` (`Dana Pembangunan`, `restriction: 'restricted'`)
+     - `'fund-sosial-zakat'` (`Dana Sosial / Zakat`, `restriction: 'restricted'`)
+4. **`categories`** (`Category` — Kategori Penerimaan & Pengeluaran Masjid):
+   - Indeks: `'id, type, defaultFundId, isDefault'`.
+5. **`transactions`** (`Transaction` — Jurnal Penerimaan & Pengeluaran):
+   - Indeks: `'id, occurredAt, type, accountId, fundId, categoryId, budgetPlanId, createdAt'`.
+6. **`cashTransfers`** (`CashTransfer` — Mutasi Antar-Kas Internal):
+   - Indeks: `'id, occurredAt, fromAccountId, toAccountId, createdAt'`.
+7. **`budgetPlans`** (`BudgetPlan` — Anggaran Operasional Bulanan & RAB Kegiatan beserta `items: BudgetLineItem[]`):
+   - Indeks: `'id, kind, periodStart, periodEnd, fundId, createdAt'`.
+8. *(Kompatibilitas Skema Lama `v2–v4`)*:
+   - Tabel lama (`budgets`, `savingsGoals`, `debtRecords`) tetap dikenali pada skema Dexie agar upgrade dari `v1–v4` ke `v5` berjalan mulus tanpa error migrasi IndexedDB.
+   - Saat migrasi ke `v5`, transaksi lama yang belum memiliki `accountId` atau `fundId` otomatis dipetakan ke `'acc-kas-tunai'` dan `'fund-operasional'`, serta `settings.openingBalance` lama diselaraskan ke saldo awal `'acc-kas-tunai'` / `'fund-operasional'`.
 
-### Target awal yang perlu diuji
+---
 
-- Tidak ada network request wajib saat membuka dashboard pertama kali setelah asset app tersedia.
-- First render memunculkan struktur inti tanpa menunggu chart atau fitur opsional.
-- Target awal initial JavaScript <= 250 kB gzip, lalu ukur bundle nyata dan revisi batas jika ada alasan yang jelas. Ini target engineering, bukan jaminan sebelum pengukuran.
-- Interaksi tambah transaksi terasa langsung pada volume data realistis.
-- Tidak ada long task yang berasal dari kalkulasi biasa dashboard.
-- Layout tidak bergeser besar ketika font/data muncul.
+## 3. Model Keuangan & Fungsi Domain Murni (`src/domain/`)
 
-## 3. Local-first storage
+Seluruh perhitungan keuangan wajib berada di fungsi domain murni yang teruji unit test:
 
-### Pilihan: IndexedDB + Dexie
+### 3.1 Perhitungan Saldo Kas (`CashAccount`) vs Saldo Dana (`Fund`)
+- **Saldo Lokasi Kas (`calculateAccountBalances`)**:
+  $$\text{balance}(acc) = acc.\text{openingBalance} + \sum_{tx \in \text{income}(acc)} tx.\text{amount} - \sum_{tx \in \text{expense}(acc)} tx.\text{amount} + \sum_{tr \in \text{in}(acc)} tr.\text{amount} - \sum_{tr \in \text{out}(acc)} tr.\text{amount}$$
+- **Saldo Dana (`calculateFundBalances`)**:
+  $$\text{balance}(fund) = fund.\text{openingBalance} + \sum_{tx \in \text{income}(fund)} tx.\text{amount} - \sum_{tx \in \text{expense}(fund)} tx.\text{amount}$$
+- **Total Kas Masjid**:
+  - $\text{Total Kas} = \sum \text{balance}(acc)$
+  - Dipilah menjadi **Saldo Dana Umum (`unrestrictedBalance`)** dan **Saldo Dana Terikat (`restrictedBalance`)**.
 
-Simpan data finansial di IndexedDB. Jangan memakai `localStorage` sebagai database transaksi; `localStorage` dapat dipakai secara terbatas untuk preferensi sederhana jika benar-benar diperlukan. Data finansial harus melewati repository/data-access layer, bukan diakses langsung dari komponen presentasi.
+### 3.2 Evaluasi Pengamanan Dana Terikat (`evaluateTransactionSoftGuard`)
+Fungsi domain murni yang memeriksa draft transaksi pengeluaran sebelum disimpan:
+1. **Peringatan Saldo Dana Tidak Cukup**: jika `tx.type === 'expense'` dan `tx.amount > currentFundBalance(tx.fundId)`.
+2. **Peringatan Saldo Lokasi Kas Tidak Cukup**: jika `tx.type === 'expense'` dan `tx.amount > currentAccountBalance(tx.accountId)`.
+3. **Peringatan Lintas Peruntukan Dana Terikat**: jika `fund.restriction === 'restricted'` dan `category.defaultFundId` merujuk ke dana lain (mis. kategori *Listrik, Air & Internet Masjid* dibebankan ke *Dana Sosial / Zakat*).
+- Mengembalikan daftar peringatan (`warnings: string[]`). Jika `warnings.length > 0`, UI menampilkan banner konfirmasi **Soft Guard** kepada bendahara sebelum benar-benar menyimpan transaksi.
 
-Dexie dipilih sebagai wrapper yang memudahkan operasi terstruktur, indeks, transaksi, dan schema versioning di atas IndexedDB. Tetap uji persistence dan migration behaviour pada browser yang didukung.
+### 3.3 Perhitungan Realisasi RAB (`calculateBudgetPlanOverview`)
+- Menghitung rencana penerimaan/pengeluaran per pos (`BudgetLineItem`) dibandingkan dengan transaksi aktual dalam rentang `[periodStart, periodEnd]` (atau yang tertaut via `budgetPlanId` / `categoryId`), lengkap dengan persentase serapan dan sisa anggaran.
 
-### Data store konseptual
+### 3.4 Generator Laporan Pertanggungjawaban (`generateMosqueFinancialReport`)
+- Menerima `period: DateRangePeriod` (preset Jumat/7 Hari, Bulanan, atau Rentang Tanggal Kustom) serta filter opsional `fundId` / `accountId`.
+- Menghitung secara presisi:
+  - `openingBalance` pada awal `period.startDate` (saldo awal + seluruh transaksi sebelum `period.startDate`),
+  - rincian penerimaan & pengeluaran per Dana dan per Kategori selama periode,
+  - posisi akhir tiap `Fund` dan tiap `CashAccount` pada `period.endDate`.
 
-MVP:
-- `transactions`
-- `categories`
-- `settings`
+---
 
-P1 bila dibutuhkan:
-- `budgets`
-- `savingsGoals`
-- `recurringItems`
-- `debtRecords`
-
-Jangan membuat `users`, `profiles`, `bankAccounts`, `wallets`, `cards`, `bankConnections`, atau tabel transfer pada MVP.
-
-### Repository boundary
-
-UI -> application/domain service -> repository interface -> Dexie implementation.
-
-Komponen React tidak boleh melakukan query Dexie ad hoc di berbagai tempat. Buat fungsi domain untuk menambah, mengedit, menghapus transaksi, menghitung ringkasan, impor, dan ekspor. Buat repository abstraction secukupnya; jangan membangun framework internal berlebihan.
-
-### Contoh struktur folder
+## 4. Struktur Folder Target
 
 ```text
 src/
   app/
     App.tsx
-    router.tsx
   components/
-    ui/
     layout/
-    feedback/
-  features/
-    overview/
-    transactions/
-    categories/
-    analytics/        # lazy-loaded setelah milestone terkait
-    planning/         # setelah fitur disetujui
+      AppShell.tsx          # 6-tab navigation: Ringkasan, Transaksi, Kas & Dana, Anggaran/RAB, Laporan, Pengaturan
   domain/
-    money.ts
-    transaction.ts
-    summaries.ts
-    validation.ts
+    money.ts                # Integer IDR arithmetic & validation
+    mosque.ts               # CashAccount, Fund, CashTransfer, MosqueSettings, Soft-Guard rules
+    transaction.ts          # Mosque Transaction & Category domain + default mosque categories
+    budgetPlan.ts           # RAB / BudgetPlan & BudgetLineItem domain calculations
+    report.ts               # Mosque financial report generator (Jumat/Mingguan, Bulanan, Per Dana)
+    summaries.ts            # Period cashflow, account/fund balances, category totals
+    validation.ts           # Input validators
   data/
-    db.ts
-    repositories/
-    migrations/
+    db.ts                   # Dexie schema v1–v5
     backup/
-  hooks/
+      notaBackup.ts         # Versioned JSON backup (v1–v5 compatible) & CSV export
+    repositories/
+      notaRepository.ts     # Single repository boundary for all stores
+  features/
+    overview/               # Tab 1: Ringkasan Masjid & First-run Mosque Onboarding
+    transactions/           # Tab 2: Jurnal Transaksi Masjid & Quick-Entry Modal (with Soft Guard)
+    cashAndFunds/           # Tab 3: Kas & Dana + Mutasi Antar-Kas
+    rab/                    # Tab 4: Anggaran / RAB Masjid
+    reports/                # Tab 5: Laporan Kas Masjid (Print/PDF & CSV)
+    settings/               # Tab 6: Pengaturan (Profil Masjid, Kategori, Data & Cadangan)
   lib/
-    date.ts
-    format.ts
+    date.ts                 # Local date helpers (including 7-day / Friday-to-Friday preset)
+    format.ts               # IDR & Indonesian date formatters
   styles/
+    tokens.css              # Design tokens + @media print rules
   test/
 ```
 
-Sesuaikan struktur jika ukuran proyek masih kecil. Jangan membuat folder abstraksi tanpa kebutuhan.
+---
 
-## 4. Model keuangan
+## 5. Cadangan & Pemulihan Atomik (`Pengaturan → Data & Cadangan`)
 
-### Amount representation
-
-- Simpan nominal IDR sebagai integer positif.
-- Jangan simpan `"Rp 1.000"` sebagai nilai domain.
-- Format tampilan memakai `Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })`.
-- Validasi integer aman dan batas nilai yang masuk akal.
-
-### Balance
-
-`currentBalance = openingBalance + sum(income.amount) - sum(expense.amount)`
-
-`openingBalance` mewakili saldo awal sebelum semua riwayat transaksi yang dimasukkan ke Nota. Ia bukan pemasukan bulan ini.
-
-### Date handling
-
-- Simpan timestamps ISO untuk audit `createdAt`/`updatedAt`.
-- Untuk transaksi, simpan representasi tanggal kejadian yang tidak menimbulkan pergeseran hari karena UTC; tetapkan strategi konsisten, misalnya date-only `YYYY-MM-DD` untuk transaksi harian dan gunakan local date pada UI.
-- Buat helper periode awal/akhir bulan serta batas filter yang sudah diuji.
-- Jangan membangun tanggal lokal hanya dari `new Date('YYYY-MM-DD')` tanpa memikirkan perbedaan zona waktu browser.
-
-### Atomicity
-
-Operasi edit/hapus/backup yang melibatkan beberapa record harus memakai transaksi IndexedDB/Dexie apabila diperlukan. Bila menambah transaksi gagal, jangan memperbarui UI seolah data persisten.
-
-## 5. Backup dan restore
-
-- Format backup JSON memiliki `appName`, `schemaVersion`, `exportedAt`, `settings`, `categories`, dan `transactions`.
-- Validasi tipe data, jumlah data, nominal, enum, dan tanggal sebelum import.
-- Tampilkan jumlah record serta mode tindakan sebelum konfirmasi.
-- MVP hanya mendukung replace dengan konfirmasi eksplisit; buat backup saat ini terlebih dahulu atau minta pengguna mengekspornya sebelum replace.
-- Jika proses import gagal, rollback melalui transaksi DB; jangan meninggalkan setengah data jika bisa dihindari.
-- Jangan mengunggah backup otomatis ke server.
-- Jelaskan bahwa backup memuat data keuangan sensitif dan harus disimpan secara aman oleh pengguna.
-
-## 6. Batas privasi dan keamanan
-
-- Data inti tetap di perangkat/browser dan tidak dikirim ke server.
-- IndexedDB pada browser tidak otomatis terenkripsi. Jangan menyebut data terenkripsi atau terlindung dari pengguna lain yang memiliki akses ke profil browser.
-- XSS tetap relevan: hindari `dangerouslySetInnerHTML`, sanitasi teks bila ada konteks HTML, dan gunakan dependency tepercaya.
-- Tidak ada API secret di frontend.
-- AI eksternal tidak termasuk pada MVP. Tanpa backend, API key provider tidak boleh ditanam di client. Jika AI eksternal kelak disetujui, pilih secara terbuka antara service backend yang melindungi secret atau model lokal/browser yang sesuai, serta minta persetujuan sebelum data finansial dikirim keluar.
-- Tidak ada analytics/telemetry pihak ketiga secara default.
-
-## 7. Strategi routing dan state
-
-- Gunakan React Router atau routing sederhana yang sesuai jumlah halaman; hindari menambahkan dua router.
-- Data persisten berasal dari Dexie.
-- State UI (modal terbuka, filter, tab) lokal di React; preferensi yang perlu bertahan disimpan dalam settings secara terukur.
-- TanStack Query tidak diperlukan untuk data transaksi lokal pada MVP karena itu adalah server-state library. Pertimbangkan hanya jika ada kebutuhan fetch/cache remote yang nyata di masa depan.
-- Jangan menyimpan daftar transaksi sebagai satu sumber data global di memori sementara yang terpisah dari database.
-
-## 8. Testing
-
-- Vitest untuk rumus saldo, agregasi periode, validasi, import/export, dan date boundaries.
-- Testing Library untuk perilaku form dan komponen interaktif yang penting.
-- Playwright untuk alur utama: onboarding, tambah pemasukan, tambah pengeluaran, edit, hapus, reload persistence, backup/restore, serta viewport mobile/desktop.
-- Periksa kesalahan console dan network request yang tidak diharapkan.
-- Gunakan data fixture hanya dalam test/dev; jangan campurkan transaksi demo pada data pengguna produksi.
-
-## 9. Architecture acceptance criteria
-
-- Build sebagai SPA statis.
-- Fungsi inti berjalan tanpa server/network.
-- Tidak ada auth, cloud DB, wallet, atau bank integration.
-- Seluruh akses data lewat lapisan data/domain yang jelas.
-- Perhitungan finansial teruji.
-- Restore tervalidasi dan tidak menimpa data tanpa persetujuan.
-- Analitik dan modul opsional tidak menambah beban awal secara tidak perlu.
-- Versi library serta hasil build/test dicatat pada handoff.
-
-## 10. Keputusan yang perlu persetujuan eksplisit jika scope berubah
-
-- Sinkronisasi lintas perangkat/cloud.
-- AI API eksternal.
-- Enkripsi backup atau app lock.
-- Banyak mata uang.
-- Multi-account/wallet virtual.
-- Fitur akuntansi yang lebih kompleks.
+- File cadangan JSON menggunakan `schemaVersion: 5` dan menyertakan: `settings`, `accounts`, `funds`, `categories`, `transactions`, `cashTransfers`, dan `budgetPlans`.
+- Impor cadangan mendukung kompatibilitas mundur (`schemaVersion` `1..5`), memvalidasi keutuhan referensi (`accountId`, `fundId`, `categoryId`) sebelum menyentuh database, menampilkan ringkasan pratinjau, dan melakukan *replace* secara atomik dalam satu transaksi Dexie `'rw'` setelah konfirmasi eksplisit.

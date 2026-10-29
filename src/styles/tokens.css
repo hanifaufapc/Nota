@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/**
+ * Nota Visual Design System & Tokens
+ * Source of truth: DESIGN_BRIEF.md & references/nota-visual-reference.png
+ *
+ * Palette roles:
+ * - --nota-emerald (#176B52): Primary brand identity & main positive actions
+ * - --nota-lime (#A8EB68): Bright accent for one key focal area or active pill (use sparingly)
+ * - --nota-soft-green (#DDECE4): Gentle secondary surface & subtle status states
+ * - --nota-bg (#F7F7F2): Warm off-white workspace canvas
+ * - --nota-surface (#FFFFFF): Clean elevated content surface
+ * - --nota-ink (#222824): Primary charcoal text
+ * - --nota-muted (#747D76): Secondary supporting text (WCAG AA on white/off-white)
+ * - --nota-border (#E6E9E4): Hairline structural divider when whitespace alone isn't enough
+ * - --nota-expense (#B42318): High-contrast accessible red for expenses/outflows
+ */
+:root {
+  --nota-emerald: #176b52;
+  --nota-emerald-hover: #125641;
+  --nota-lime: #a8eb68;
+  --nota-soft-green: #ddece4;
+  --nota-bg: #f7f7f2;
+  --nota-surface: #ffffff;
+  --nota-ink: #222824;
+  --nota-muted: #5c655e;
+  --nota-border: #e6e9e4;
+  --nota-expense: #b42318;
+  --nota-expense-soft: #fef3f2;
+  --nota-warning: #b54708;
+  --nota-warning-soft: #fffaeb;
+
+  /* Radius scale */
+  --radius-hero: 1.75rem; /* 28px — primary hero & focal containers */
+  --radius-panel: 1.25rem; /* 20px — secondary content regions */
+  --radius-control: 9999px; /* Pill controls & primary action buttons */
+  --radius-badge: 0.625rem; /* 10px — compact icon badges & tags */
+}
+
+@theme {
+  --color-nota-emerald: var(--nota-emerald);
+  --color-nota-emerald-hover: var(--nota-emerald-hover);
+  --color-nota-lime: var(--nota-lime);
+  --color-nota-soft-green: var(--nota-soft-green);
+  --color-nota-bg: var(--nota-bg);
+  --color-nota-surface: var(--nota-surface);
+  --color-nota-ink: var(--nota-ink);
+  --color-nota-muted: var(--nota-muted);
+  --color-nota-border: var(--nota-border);
+  --color-nota-expense: var(--nota-expense);
+  --color-nota-expense-soft: var(--nota-expense-soft);
+  --color-nota-warning: var(--nota-warning);
+  --color-nota-warning-soft: var(--nota-warning-soft);
+
+  --font-sans:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --radius-hero: var(--radius-hero);
+  --radius-panel: var(--radius-panel);
+  --radius-control: var(--radius-control);
+  --radius-badge: var(--radius-badge);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--nota-bg);
+    color: var(--nota-ink);
+    color-scheme: light;
+  }
+
+  /* Tabular numerals prevent layout shift when IDR amounts change */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Accessible keyboard focus ring */
+  :focus-visible {
+    outline: 2px solid var(--nota-emerald);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Clean Congregation Announcement Print Layout (DESIGN_BRIEF.md §4) */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  .nota-print-sheet {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .nota-print-sheet [role="region"],
+  .nota-print-sheet .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .nota-print-sheet table {
+    page-break-inside: auto;
+  }
+
+  .nota-print-sheet thead {
+    display: table-header-group;
+  }
+
+  .nota-print-sheet tfoot {
+    display: table-footer-group;
+  }
+
+  .nota-print-sheet tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .nota-print-sheet footer {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+}
+
+

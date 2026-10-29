@@ -1,163 +1,109 @@
-# Design Brief: Nota
+# Design Brief: Nota — Manajemen Keuangan Masjid
 
-**Status:** Arah visual utama untuk seluruh halaman  
+**Status:** Arah visual utama untuk seluruh halaman Nota Masjid  
 **Referensi utama:** `references/nota-visual-reference.png`
 
-## 1. Karakter desain
+---
 
-Nota terasa seperti ruang kerja keuangan pribadi yang matang: bersih, tenang, ringan, dengan sentuhan hijau yang segar. Referensi memperlihatkan kanvas terang yang luas, tipografi jelas, bentuk rounded, hero finansial berukuran besar, aksen lime, dan informasi yang disusun dalam beberapa area dengan bobot visual berbeda.
+## 1. Karakter Desain
 
-Ambil komposisi dan prinsipnya, bukan detail produk kartu/bank dari gambar. Nota bukan aplikasi bank, jadi jangan menampilkan nomor rekening, mata uang selector, points/rewards, kartu fisik, atau tombol transfer/request balance.
+Nota untuk pengelolaan keuangan masjid memadukan ketenangan ruang kerja modern dengan wibawa dan keterbukaan pembukuan publik jamaah: bersih, terang, jujur, dan sangat mudah dipindai oleh pengurus DKM maupun jamaah.
 
-### Kata kunci
-- Premium, bukan berlebihan.
-- Hangat, bukan steril.
-- Dinamis, bukan ramai.
-- Minimal, bukan kosong.
-- Berkarakter, bukan template dashboard generik.
-- Informatif, bukan padat.
+Palet hijau zamrud (`--nota-emerald`), aksen *lime* (`--nota-lime`), permukaan hijau lembut (`--nota-soft-green`), dan latar *warm off-white* (`--nota-bg`) dari referensi visual dipertahankan penuh karena memberikan kesan sejuk, amanah, dan profesional tanpa terlihat seperti template dashboard admin generik.
 
-## 2. Token visual
+### Kata Kunci
+- **Amanah & Transparan** — angka, peruntukan dana, dan saldo kas terbaca jelas tanpa kerancuan.
+- **Premium namun Bersahaja** — tipografi tajam, ruang kosong lega, tanpa dekorasi berlebihan.
+- **Tegas Membedakan Konteks** — jelas membedakan *Lokasi Kas* (tempat uang disimpan) dan *Dana Masjid* (peruntukan amanah).
+- **Siap Diumumkan** — halaman `Laporan` dapat langsung dicetak menjadi lembar pengumuman kas masjid yang rapi.
+
+---
+
+## 2. Token Visual
 
 ### Warna
-- `--nota-emerald: #176B52` — warna brand dan tindakan utama.
-- `--nota-lime: #A8EB68` — aksen terang untuk satu area penting atau indikator; jangan digunakan pada semua elemen.
-- `--nota-soft-green: #DDECE4` — permukaan lembut dan state sukses ringan.
-- `--nota-bg: #F7F7F2` — latar aplikasi warm off-white.
-- `--nota-surface: #FFFFFF` — area konten penting.
-- `--nota-ink: #222824` — teks utama.
-- `--nota-muted: #747D76` — teks sekunder.
-- `--nota-border: #E6E9E4` — garis halus, hanya bila dibutuhkan.
-- `--nota-expense: warna merah yang cukup kontras` — pengeluaran/penurunan; tetapkan setelah uji kontras.
+- `--nota-emerald: #176B52` — warna identitas utama, tindakan primer, indikator penerimaan, dan *Dana Operasional Umum*.
+- `--nota-lime: #A8EB68` — aksen terang khusus untuk **satu** area fokus per tampilan (mis. kartu arus kas periode pada `Ringkasan` atau indikator tab aktif).
+- `--nota-soft-green: #DDECE4` — permukaan lembut untuk *badge* positif, ringkasan aman, dan latar informasi pendukung.
+- `--nota-bg: #F7F7F2` — latar kanvas aplikasi *warm off-white*.
+- `--nota-surface: #FFFFFF` — permukaan kartu/panel konten utama.
+- `--nota-ink: #222824` — teks utama kontras tinggi.
+- `--nota-muted: #747D76` — teks sekunder dan label penjelas.
+- `--nota-border: #E6E9E4` — garis pemisah halus.
+- `--nota-expense: #B42318` (beserta permukaan lembut `--nota-expense-soft`) — pengeluaran, defisit, dan peringatan tegas (*Soft Guard*).
 
-Pastikan warna dipakai konsisten melalui token, bukan literal tersebar di banyak komponen. Periksa kontras teks, terutama teks tipis di atas lime dan soft green.
+### Pembeda Visual Dana Umum vs Dana Terikat
+- **Dana Operasional Umum (`unrestricted`)**: menggunakan *badge* bernuansa `nota-soft-green` dengan teks `nota-emerald` (`Dana Umum`).
+- **Dana Terikat / Amanah (`restricted` — Pembangunan, Sosial/Zakat)**: menggunakan *badge* tegas berbingkai `nota-ink/20` atau aksen khusus (`Dana Terikat · Amanah`) agar bendahara selalu sadar bahwa dana tersebut memiliki peruntukan khusus.
 
-### Tipografi
-- Gunakan satu keluarga sans-serif yang bersih dan mudah dibaca; pilih font system stack terlebih dahulu agar cepat dan tanpa permintaan font eksternal.
-- Angka saldo memakai ukuran besar, bobot medium/regular, dan angka tabular agar tidak bergeser saat berubah.
-- Judul halaman singkat dan jelas.
-- Label sekunder lebih kecil, tetapi tetap terbaca.
-- Hindari terlalu banyak font weight dan ukuran yang berbeda.
+### Tipografi & Angka
+- Gunakan *system sans-serif stack* yang cepat dan bersih.
+- Semua angka nominal Rupiah wajib memakai `tabular-nums` agar rata kanan/kolom sejajar sempurna pada daftar transaksi dan tabel laporan.
+- Jangan menyingkat nominal laporan menjadi `"Rp 1,5 Jt"` pada tabel pembukuan atau laporan jamaah; tampilkan angka Rupiah utuh (`Rp 1.500.000`).
 
-### Bentuk dan elevasi
-- Radius besar untuk hero/area utama, medium untuk kontrol, kecil untuk ikon dan badge.
-- Hindari shadow tebal. Gunakan border tipis atau perubahan permukaan untuk pemisahan.
-- Hindari membungkus setiap label, angka, dan daftar ke dalam card tersendiri.
-- Gunakan ruang kosong sebagai alat hierarki, bukan menumpuk divider.
+---
 
-### Ikon dan motion
-- Gunakan ikon Lucide dengan stroke konsisten.
-- Ikon tanpa teks hanya untuk kontrol yang benar-benar familier dan memiliki accessible label/tooltip.
-- Motion halus dan singkat; tidak boleh menunda tindakan.
-- Hormati `prefers-reduced-motion`.
+## 3. Arsitektur Visual 6 Halaman Utama (Anti-Duplikasi)
 
-## 3. Komposisi dashboard
+Setiap halaman utama dalam navigasi (`Ringkasan`, `Transaksi`, `Kas & Dana`, `Anggaran / RAB`, `Laporan`, `Pengaturan`) wajib memiliki komposisi visual yang berbeda sesuai fungsinya:
 
-### Desktop ≥ 1024 px
+1. **`Ringkasan` (Executive Mosque Overview)**
+   - **Atas (Hero 2-Kolom Asimetris)**:
+     - Kiri (7 kolom): **Total Kas Masjid Saat Ini** dengan rincian terpilah antara *Dana Operasional Umum* dan *Total Dana Terikat (Pembangunan & Sosial/Zakat)*, disertai tombol cepat `+ Catat Penerimaan` dan `− Catat Pengeluaran`.
+     - Kanan (5 kolom, Aksen Lime): **Arus Kas Periode Ini** (`Selisih Periode`, `Total Penerimaan`, `Total Pengeluaran`).
+   - **Tengah**: Ringkasan Posisi Kas (`Kas Tunai` vs `Rekening Bank Tercatat`) & Posisi 3 Dana Masjid berdampingan dengan proporsi arus kas kategori.
+   - **Bawah**: Pratinjau 5 Transaksi Terakhir dengan pintasan ke `Transaksi` dan `Laporan`.
 
-1. Workspace berada pada kanvas off-white yang luas, dengan lebar konten terkontrol. Jangan membuat bingkai abu-abu besar hanya untuk meniru screenshot.
-2. Header: identitas Nota dan sapaan/heading di kiri; pilihan periode dan tombol tambah transaksi di kanan. Jangan menambahkan avatar palsu, lonceng notifikasi, atau elemen akun yang tidak memiliki fungsi.
-3. Area hero 2 kolom yang tidak harus berukuran sama:
-   - Area utama: label `Saldo tercatat`, nominal besar, status lokal bila perlu, aksi `Tambah pemasukan` dan `Tambah pengeluaran`.
-   - Area aksen lime: ringkasan periode berupa pemasukan, pengeluaran, atau selisih; pilih satu gagasan fokus. Jangan meniru rewards/poin.
-4. Area bawah:
-   - Satu visual analitik sederhana yang membantu memahami arus kas.
-   - Daftar transaksi terakhir yang ringkas dan mudah dipindai.
-5. Gunakan sidebar hanya bila terbukti membuat navigasi lebih mudah. Referensi memakai top navigation; pilih top navigation sebagai titik awal pada desktop agar UI tetap ringan.
+2. **`Transaksi` (Buku Jurnal Kas Masjid)**
+   - Tidak mengulang kartu Hero besar.
+   - Dibuka langsung dengan **Bar Konteks Ringkas** (1 baris) dan **Panel Pencarian & Filter Multi-Dimensi** (Periode, Jenis, Lokasi Kas, Dana, Kategori, Urutan).
+   - Tabel/daftar baris transaksi menampilkan: Tanggal, Kategori, Badge Dana, Badge Lokasi Kas, Catatan/Donatur/No. Bukti, Nominal (`+`/`−`), serta tombol Edit & Hapus.
 
-### Tablet 768–1023 px
-- Kurangi jumlah kolom sesuai ruang.
-- Pastikan nominal tidak terpotong dan tindakan utama tetap terlihat.
-- Grafik dan daftar transaksi boleh tersusun vertikal.
+3. **`Kas & Dana` (Manajemen Tempat Uang & Amanah Dana)**
+   - **Area 1 — Lokasi Penyimpanan Kas (`CashAccount`)**: Kartu posisi *Kas Tunai* dan *Rekening Bank Tercatat* beserta saldo awal, total mutasi, dan saldo akhir masing-masing.
+   - **Area 2 — Dana Masjid (`Fund`)**: Kartu posisi *Dana Operasional Umum*, *Dana Pembangunan*, dan *Dana Sosial / Zakat* lengkap dengan status *Umum* vs *Terikat*.
+   - **Area 3 — Mutasi Antar-Kas (`CashTransfer`)**: Form dan riwayat perpindahan uang antar-lokasi kas (mis. setor tunai kotak Jumat ke rekening bank tercatat).
 
-### Mobile 320–767 px
-- Prioritaskan saldo, ringkasan periode, dan tambah transaksi.
-- Susun konten dalam satu kolom; jangan mengecilkan desktop dashboard menjadi tiga kolom sempit.
-- Gunakan navigasi bawah atau navigasi ringkas yang memberi akses mudah ke Ringkasan dan Transaksi.
-- Tindakan tambah harus mudah dijangkau, tetapi tidak menutupi konten atau keyboard input.
-- Form transaksi memakai halaman/panel yang jelas; field yang sering dipakai harus mudah diisi dengan satu tangan.
-- Hindari horizontal overflow. Tabel kompleks harus berubah menjadi daftar baris yang responsif.
+4. **`Anggaran / RAB` (Rencana Anggaran Biaya Operasional & Kegiatan)**
+   - Menampilkan daftar RAB aktif (mis. *Anggaran Operasional Bulanan* atau *RAB Kegiatan Ramadan / Idul Adha / Renovasi*).
+   - Menyajikan perbandingan visual antara **Rencana Anggaran**, **Realisasi Aktual**, dan **Sisa / Selisih Anggaran** per pos (`BudgetLineItem`) menggunakan *progress bar* yang informatif.
 
-## 4. Model informasi
+5. **`Laporan` (Lembar Pertanggungjawaban Jamaah — Siap Cetak)**
+   - **Bar Kontrol Laporan (Tidak ikut tercetak saat `@media print`)**: Pemilih preset periode (*Laporan Kas Jumat / 7 Hari*, *Laporan Bulanan*, *Rentang Tanggal Kustom*), filter Dana, tombol `Cetak / Simpan PDF`, dan `Ekspor CSV Laporan`.
+   - **Kertas Kerja Laporan Masjid**:
+     - Kop Identitas Masjid (Nama Masjid, Alamat, Judul Laporan, dan Periode Tanggal).
+     - Ringkasan Eksekutif: `Saldo Awal Periode`, `Total Penerimaan`, `Total Pengeluaran`, dan `Saldo Akhir Periode`.
+     - Tabel Rincian Posisi per Dana (*Saldo Awal → Penerimaan → Pengeluaran → Saldo Akhir* untuk tiap Dana).
+     - Tabel Rincian Penerimaan & Pengeluaran per Kategori.
+     - Rincian Posisi Penyimpanan Kas Akhir (*Kas Tunai* + *Rekening Bank Tercatat*).
+     - Blok Tanda Tangan Pengesahan (`Mengetahui, Ketua DKM` dan `Dibuat oleh, Bendahara`).
 
-### Hierarki dashboard
-1. Saldo virtual saat ini.
-2. Pemasukan dan pengeluaran untuk periode aktif.
-3. Transaksi terakhir.
-4. Grafik/insight satu langkah lebih dalam.
-5. Fitur opsional seperti anggaran dan target tabungan tidak mendominasi dashboard.
+6. **`Pengaturan` (`Profil Masjid`, `Kategori`, `Data & Cadangan`)**
+   - Tersusun bersih menjadi 3 panel administratif:
+     1. **Profil & Pengurus Masjid** (Nama Masjid, Alamat, Nama Ketua DKM, Nama Bendahara).
+     2. **Manajemen Kategori Masjid** (Daftar kategori penerimaan & pengeluaran beserta dana bawaannya).
+     3. **Data & Cadangan (`BackupRestoreSection`)**: satu-satunya lokasi untuk ekspor/impor cadangan JSON dan ekspor CSV seluruh data.
 
-### Prinsip nominal
-- Nominal utama memiliki kontras dan ukuran paling besar.
-- Tambahan tanda `+`/`−` dan warna mendukung, bukan menjadi satu-satunya petunjuk.
-- Konsisten menggunakan format IDR Indonesia.
-- Hindari memotong semua nominal menjadi singkatan bila pengguna perlu memahami jumlah tepatnya; singkatan hanya untuk grafik padat.
+---
 
-### Grafik
-- Satu grafik hanya menjawab satu pertanyaan.
-- Label dan tooltip harus dapat dipahami; warna saja tidak cukup untuk membedakan data.
-- Sediakan fallback ringkas bila belum ada transaksi.
-- Jangan menampilkan chart dekoratif dengan data dummy pada penggunaan normal.
-- Lazy-load chart jika ukurannya menambah beban awal secara berarti.
+## 4. Aturan Responsif & Cetak (`@media print`)
 
-## 5. Interaksi
+- **Mobile (`320px–767px`)**: Navigasi 6 item harus tetap nyaman dijangkau (menggunakan *scrollable/wrapping pill bar* yang rapi tanpa memotong teks), dan tabel laporan/transaksi beradaptasi tanpa *horizontal page overflow*.
+- **Mode Cetak (`@media print`)**: Saat pengguna menekan `Cetak / Simpan PDF` pada halaman `Laporan`, sembunyikan header navigasi aplikasi, tombol filter, dan elemen kontrol (`print:hidden`), serta tampilkan lembar laporan kas masjid dengan latar putih bersih, tipografi tajam, dan tabel berbingkai rapi siap tempel di papan informasi masjid atau dibagikan sebagai PDF.
 
-### Pencatatan cepat
-- Aksi utama selalu terlihat dari dashboard.
-- Jenis transaksi terlihat jelas: Pemasukan atau Pengeluaran.
-- Fokus awal diarahkan ke nominal bila sesuai.
-- Nominal diformat saat ditampilkan; data tetap integer di domain.
-- Kategori default dapat dipilih cepat, tetapi pengguna tetap bisa mengubahnya.
-- Catatan bersifat opsional.
-- Tanggal default adalah hari ini.
-- Tombol simpan memiliki state saving/success/error yang benar.
-- Sesudah tersimpan, tampilkan feedback sederhana dan perbarui dashboard.
+---
 
-### State antarmuka
-Setiap halaman/fitur harus merencanakan:
-- Loading hanya bila operasi async benar-benar membutuhkan tampilan itu.
-- Empty state yang menunjukkan langkah selanjutnya.
-- Error state dengan pilihan mencoba lagi atau memulihkan data.
-- Destructive action dengan konfirmasi.
-- Focus state keyboard yang terlihat.
+## 5. Microcopy Bahasa Indonesia yang Konsisten
 
-## 6. Bahasa dan microcopy
+Gunakan istilah yang akrab bagi pengurus DKM dan jamaah:
+- `Total Kas Masjid`
+- `Dana Operasional Umum` / `Dana Terikat (Amanah)`
+- `Kas Tunai` / `Rekening Bank Tercatat`
+- `Catat Penerimaan` / `Catat Pengeluaran`
+- `Mutasi Antar-Kas`
+- `Anggaran / RAB`
+- `Laporan Kas Jumat (7 Hari)` / `Laporan Kas Bulanan`
+- `Cetak / Simpan PDF`
+- `Peringatan Penggunaan Dana Terikat` (*Soft Guard*)
 
-Gunakan label seperti:
-- `Saldo tercatat`
-- `Pemasukan`
-- `Pengeluaran`
-- `Selisih bulan ini`
-- `Transaksi terakhir`
-- `Tambah pemasukan`
-- `Tambah pengeluaran`
-- `Belum ada transaksi`
-- `Ekspor cadangan`
-
-Hindari label yang mengesankan integrasi bank seperti `rekening terhubung`, `transfer saldo`, atau `saldo bank`. Jangan menggunakan notifikasi reward, akun pengguna, atau kartu jika tidak ada fiturnya.
-
-## 7. Anti-pattern yang dilarang
-
-- Dashboard terdiri dari 8–12 card dengan ukuran dan gaya identik.
-- Semua elemen dibatasi garis/border tanpa alasan.
-- Shadow tebal, gradient berlebihan, glassmorphism dekoratif.
-- Menampilkan data demo seolah-olah data nyata.
-- Placeholder/button yang tampak aktif tetapi tidak melakukan tindakan.
-- Sidebar dan bottom nav sekaligus pada layar yang sama tanpa kebutuhan jelas.
-- Emoji sebagai ikon UI utama.
-- Teks abu-abu terlalu pudar dan ukuran label yang terlalu kecil.
-- Menggunakan warna hijau pada semua hal sampai hierarchy hilang.
-- Mengimplementasikan semua widget referensi secara literal tanpa melihat kebutuhan Nota.
-- AI agent menambah library/komponen hanya karena populer tanpa alasan produk.
-
-## 8. Definition of Done visual
-
-Sebuah halaman dianggap selesai jika:
-- Hierarki informasi jelas saat dilihat sekilas.
-- Layout terasa sebagai bagian dari Nota dan tidak generik.
-- Tidak ada elemen akun, bank, wallet, atau pembayaran nyata.
-- Layout diuji pada mobile dan desktop.
-- Tidak ada overflow, clipped labels, atau modal yang sulit dipakai.
-- Keyboard focus, label input, kontras, empty/error state sudah diperiksa.
-- Screenshot hasil aktual dibandingkan dengan brief dan referensi.
-- Semua kontrol yang terlihat memiliki aksi yang benar.
+Hindari istilah perbankan otomatis seperti `Hubungkan Rekening`, `Top Up Wallet`, `Transfer Antar-Bank Online`, atau `Klaim Reward`.

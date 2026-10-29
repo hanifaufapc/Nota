@@ -1,42 +1,22 @@
-# Nota Blueprint
+# Nota — Aplikasi Manajemen Keuangan Masjid Local-First
 
-Paket spesifikasi awal untuk membangun **Nota**, aplikasi pengelolaan keuangan pribadi yang local-first, tanpa login, tanpa rekening/wallet asli, dan berfokus pada pengalaman yang premium, tenang, serta cepat.
+**Nota** adalah aplikasi web *local-first* untuk membantu pengurus dan bendahara masjid (DKM / Takmir) mencatat, mengelola kas & dana amanah, menyusun Rencana Anggaran Biaya (RAB), serta mencetak laporan pertanggungjawaban keuangan masjid secara transparan kepada jamaah.
 
-## Isi paket
+## Dokumen Sumber Kebenaran (Source of Truth)
 
-- `PRD.md`: kebutuhan produk, target pengguna, ruang lingkup, aturan bisnis, dan kriteria penerimaan.
-- `DESIGN_BRIEF.md`: arahan visual berdasarkan referensi yang diberikan, sistem desain, layout, dan anti-pattern.
-- `ARCHITECTURE.md`: framework, penyimpanan lokal, struktur kode, keamanan data, performa, dan pengujian.
-- `AGENTS.md`: instruksi persisten untuk coding agent agar tetap konsisten dan tidak mengarang fitur.
-- `HANDOFF.md`: status awal dan format serah-terima antar sesi/agent.
-- `IMPLEMENTATION_PLAN.md`: milestone berurutan dengan acceptance gate.
-- `references/nota-visual-reference.png`: gambar referensi asli untuk diberikan kepada agent visual-capable.
+- [`PRD.md`](PRD.md): Kebutuhan produk keuangan masjid, pemisahan Lokasi Kas (`CashAccount`) dan Dana Masjid (`Fund`), aturan *Soft Guard* dana terikat, RAB, serta spesifikasi Laporan Kas Jumat & Bulanan.
+- [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md): Arahan visual, arsitektur informasi 6 tab utama (`Ringkasan`, `Transaksi`, `Kas & Dana`, `Anggaran / RAB`, `Laporan`, `Pengaturan`), serta aturan cetak `@media print`.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): Arsitektur teknis React + TypeScript + Vite + Tailwind CSS v4 + Dexie (`NOTA_SCHEMA_VERSION = 5`), batas repositori, dan rumus domain murni.
+- [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md): Urutan implementasi Milestone M1 s.d. M5 beserta kriteria penerimaannya.
+- [`MILESTONES.md`](MILESTONES.md): Panduan eksekusi bertahap untuk agen pengembang.
+- [`AGENTS.md`](AGENTS.md): Instruksi persisten dan aturan rekayasa untuk coding agent.
+- [`HANDOFF.md`](HANDOFF.md): Status faktual implementasi, keputusan yang telah dikunci, dan langkah berikutnya.
 
-## Keputusan utama yang sudah dikunci
+## Keputusan Utama Produk
 
-1. Nama produk adalah **Nota**.
-2. Produk merupakan aplikasi personal single-user. Tidak ada login, profil pengguna, akun bank asli, kartu, integrasi e-wallet, atau transfer antar-rekening.
-3. Fungsi inti tidak membutuhkan server atau cloud database. Data keuangan disimpan di perangkat/browser.
-4. Ringkasan saldo, pemasukan, pengeluaran, dan pencatatan transaksi adalah prioritas utama.
-5. Anggaran, target tabungan, utang/piutang, iuran/tagihan, analitik lanjutan, dan AI bersifat opsional serta bertahap.
-6. Referensi visual menjadi arah komposisi dan nuansa, bukan template untuk disalin mentah-mentah.
-
-## Cara memulai pada repository baru
-
-1. Buat repository GitHub baru bernama `nota` (atau nama yang tersedia) dan jadikan repository tersebut sebagai sumber kerja utama.
-2. Salin seluruh isi paket ini ke root repository. Jangan salin riwayat Git proyek lama.
-3. Berikan semua dokumen dan file referensi ke coding agent.
-4. Minta agent membaca `AGENTS.md`, lalu `PRD.md`, `DESIGN_BRIEF.md`, `ARCHITECTURE.md`, dan `IMPLEMENTATION_PLAN.md`.
-5. Minta agent memulai **Milestone 0 saja**, kemudian menampilkan keputusan dan hasil pemeriksaan sebelum lanjut.
-6. Setelah setiap milestone, wajib jalankan tes yang relevan dan update `HANDOFF.md`.
-
-## Sumber keputusan jika ada konflik
-
-- Product scope dan aturan pengguna: `PRD.md`
-- Tampilan dan pengalaman pengguna: `DESIGN_BRIEF.md`
-- Pilihan teknologi dan batasan arsitektur: `ARCHITECTURE.md`
-- Cara agent bekerja dan batas perubahan: `AGENTS.md`
-- Urutan pengerjaan: `IMPLEMENTATION_PLAN.md`
-- Status implementasi yang benar-benar sudah dikerjakan: `HANDOFF.md`
-
-Jika ada konflik antar dokumen, agent harus berhenti pada bagian yang terdampak, menjelaskan konflik, lalu meminta keputusan. Jangan diam-diam memilih asumsi besar atau mengubah scope.
+1. **Local-First & Tanpa Server**: Berjalan penuh di browser menggunakan IndexedDB (Dexie) tanpa memerlukan akun login, server cloud, integrasi bank otomatis, atau provider AI.
+2. **Pemisahan Lokasi Kas & Peruntukan Dana**:
+   - **2 Lokasi Kas Bawaan (`CashAccount`)**: *Kas Tunai* dan *Rekening Bank Tercatat* (beserta dukungan Mutasi Antar-Kas).
+   - **3 Dana Bawaan (`Fund`)**: *Dana Operasional Umum* (`unrestricted`), *Dana Pembangunan* (`restricted`), dan *Dana Sosial / Zakat* (`restricted`).
+3. **Soft Guard Dana Terikat**: Memberikan peringatan tegas dengan konfirmasi bendahara apabila pengeluaran melebihi saldo dana/kas atau membebani dana terikat di luar peruntukannya.
+4. **6 Tab Navigasi dengan Identitas Unik**: `Ringkasan`, `Transaksi`, `Kas & Dana`, `Anggaran / RAB`, `Laporan`, dan `Pengaturan` (`Profil Masjid`, `Kategori`, `Data & Cadangan`).
